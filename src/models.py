@@ -82,14 +82,31 @@ def create_transfer_learning_model(input_shape, num_classes):
     x = layers.Concatenate()([inputs, inputs, inputs])
     
     # Load Base Model (MobileNetV2)
-    # include_top=False checks for weights. If weights='imagenet', input must be 3 channels.
-    base_model = applications.MobileNetV2(
-        include_top=False,
-        input_shape=(input_shape[0], input_shape[1], 3),
-        weights='imagenet'
-    )
+    # Try to load with imagenet weights, with retry logic
+    max_retries = 3
+    base_model = None
     
-    base_model.trainable = False # Frozen base
+    for attempt in range(max_retries):
+        try:
+            print(f"Attempting to load MobileNetV2 weights (attempt {attempt + 1}/{max_retries})...")
+            base_model = applications.MobileNetV2(
+                include_top=False,
+                input_shape=(input_shape[0], input_shape[1], 3),
+                weights='imagenet'
+            )
+            print("Successfully loaded MobileNetV2 with ImageNet weights!")
+            break
+        except Exception as e:
+            print(f"Failed to download weights (attempt {attempt + 1}): {str(e)}")
+            if attempt == max_retries - 1:
+                print("WARNING: Using MobileNetV2 without pre-trained weights (training from scratch)")
+                base_model = applications.MobileNetV2(
+                    include_top=False,
+                    input_shape=(input_shape[0], input_shape[1], 3),
+                    weights=None
+                )
+    
+    base_model.trainable = False # Frozen base (or trainable if no pretrained weights)
     
     x = base_model(x)
     

@@ -5,8 +5,6 @@ __pycache__/
 
 # Data, Model, and Results
 data/
-models/
-results/
 
 # Editor specific
 .vscode/
